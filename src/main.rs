@@ -26,17 +26,29 @@ fn test1() {
 
 fn test2() {
     Python::with_gil(|py| {
-        let rust_test = PyModule::import(py, "rust_test").expect("Unable to import rust_test module");
-        let ret: String = rust_test
-            .getattr("i2a").expect("Error retrieving i2a attr")
-            .call1((13,)).expect("Error calling i2a with arg")
-            .extract().expect("Unable to convert output to string");
+        let rust_test =
+            PyModule::import(py, "rust_test").expect("Unable to import rust_test module");
+        let i2a = rust_test.getattr("i2a").expect("Error retrieving i2a attr");
+        let concat = rust_test
+            .getattr("concat")
+            .expect("Error retrieving concat attr");
+        let ret1: String = i2a
+            .call1((13,))
+            .expect("Error calling i2a with arg")
+            .extract()
+            .expect("Unable to convert output to string");
 
-        println!("Found {}", ret)
+        println!("Found {}", ret1);
+        let ret2: String = concat
+            .call1((10, 100))
+            .expect("Error calling concat with args")
+            .extract()
+            .expect("Unable to convert output to string");
+
+        println!("Found {}", ret2)
     })
 }
 fn main() {
     println!("Let's try this !");
     test2();
-
 }
