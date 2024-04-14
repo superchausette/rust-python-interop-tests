@@ -6,5 +6,4 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-cpython = "0.7.1"
-pyo3 = { version = "0.20.0", features = ["auto-initialize"]}
+pyo3 = { version = "0.21.1", features = ["auto-initialize"]}

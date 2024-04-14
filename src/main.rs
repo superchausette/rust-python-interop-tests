@@ -1,33 +1,32 @@
-//use cpython::{Python, PyResult, PyObject};
+use std::fmt;
+
 use pyo3::prelude::*;
 
-/*
-fn test1() {
-   // Initialize the Python interpreter
-   let gil = Python::acquire_gil();
-   let py = gil.python();
-
-   let python_module = py.import("rust_test").expect("Error importing rust_test");
-
-   let result: PyResult<PyObject> = python_module.call(py, "i2a", (42,), None);
-   match result {
-       Ok(value) => {
-           // Do something with the result
-           let py_str: PyResult<String> = value.extract().expect("Error extracting result");
-           println!("Result from Python: {}", py_str);
-       }
-       Err(err) => {
-           // Handle the error
-           eprintln!("Error calling i2a function: {:?}", err);
-       }
-   }
+#[derive(Debug, Clone)]
+struct MyError {
+    code: i32,
+    descr: String,
 }
-*/
 
-fn test2() {
+impl MyError {
+    fn new(code: i32, descr: String) -> Self {
+        Self { code, descr }
+    }
+}
+
+impl fmt::Display for MyError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "my_error: {} {}", self.code, self.descr)
+    }
+}
+
+
+type MyResult<T> = std::result::Result<T, MyError>;
+
+fn test() {
     Python::with_gil(|py| {
         let rust_test =
-            PyModule::import(py, "rust_test").expect("Unable to import rust_test module");
+            PyModule::import_bound(py, "rust_test").expect("Unable to import rust_test module");
         let i2a = rust_test.getattr("i2a").expect("Error retrieving i2a attr");
         let concat = rust_test
             .getattr("concat")
@@ -37,18 +36,24 @@ fn test2() {
             .expect("Error calling i2a with arg")
             .extract()
             .expect("Unable to convert output to string");
-
         println!("Found {}", ret1);
-        let ret2: String = concat
+        let ret2 = concat
             .call1((10, 100))
-            .expect("Error calling concat with args")
-            .extract()
-            .expect("Unable to convert output to string");
-
+            .expect("Error calling concat with args");
+        let ret2 : String = generic_extract(ret2).expect("Not able to convert to str");
         println!("Found {}", ret2)
     })
 }
+
+fn generic_extract<'py, T>(result: Bound<'py, PyAny>) -> MyResult<T>
+    where T:  FromPyObject<'py>, {
+    match result.extract::<T>() {
+        Ok(extracted) => Ok(extracted),
+        Err(_) => Err(MyError::new(10, String::from("Wrong type extraction")))
+    }
+}
+
 fn main() {
     println!("Let's try this !");
-    test2();
+    test();
 }
